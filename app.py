@@ -6,6 +6,9 @@ import joblib
 import warnings
 import google.generativeai as genai
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 warnings.filterwarnings('ignore')
 
@@ -158,7 +161,7 @@ df_mri, df_blood_X, df_blood_y = get_patients()
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2042/2042250.png", width=100)
     st.header("Sistem Ayarları")
-    api_key = st.text_input("Gemini API Key", value="AIzaSyBca8I4FWQf9x2VnQqIbF6Y_7k3xvVJrMA", type="password")
+    api_key = st.text_input("Gemini API Key", value=os.getenv("GEMINI_API_KEY", ""), type="password")
     
     st.markdown("---")
     st.subheader("Hasta Seçimi")

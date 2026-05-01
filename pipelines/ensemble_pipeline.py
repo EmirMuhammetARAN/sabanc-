@@ -4,12 +4,14 @@ import os
 import joblib
 import warnings
 import google.generativeai as genai
+from dotenv import load_dotenv
 
 warnings.filterwarnings('ignore')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Gemini API Key (Kullanicidan gelen key)
-GEMINI_API_KEY = "AIzaSyBca8I4FWQf9x2VnQqIbF6Y_7k3xvVJrMA"
+load_dotenv()
+# Gemini API Key (Kullanicidan gelen key veya environment variable)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 genai.configure(api_key=GEMINI_API_KEY)
 # Yeni gemini modeli
 llm_model = genai.GenerativeModel('gemini-flash-latest')
