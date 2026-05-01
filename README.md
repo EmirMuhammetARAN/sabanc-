@@ -20,7 +20,7 @@ neuroveil/
 │
 ├── pipelines/
 │   ├── mri_pipeline.py               # Modul 1: MRI Radyomiks (SVM, %74.29)
-│   └── blood_pipeline.py             # Modul 2: Kan Gen Ifadesi (SVM, %71.05)
+│   └── blood_pipeline.py             # Modul 2: Kan Gen Ifadesi (SVM, %97.37)
 │
 ├── experiments/
 │   ├── optuna_search.py              # Optuna hiperparametre optimizasyonu
@@ -46,7 +46,7 @@ neuroveil/
 | Module | Data Source | Features | Model | Accuracy |
 |--------|-----------|----------|-------|----------|
 | MRI Radiomics | Dryad (173 hasta) | 682 brain regions | LASSO + SVM | **74.29%** |
-| Blood Transcriptomics | GSE226260 (189 hasta) | 23,864 genes | LASSO + SVM | **71.05%** |
+| Blood Transcriptomics | GSE226260 (189 hasta) | 23,864 genes | LASSO + SVM | **97.37%** |
 | Ensemble (TODO) | Both | Combined | Meta-Learner | TBD |
 
 ## Data Sources
