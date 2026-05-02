@@ -24,7 +24,7 @@ df = pd.read_excel(os.path.join(BASE_DIR, 'data', 'mri', 'Dryad_final.xlsx'), sh
 df['target'] = (df['group'] == 'PCC').astype(int)
 
 yasakli_sutunlar = [
-    'delay_MRI', 'moca', 'olfaction', 'attention', 'memory', 
+    'delay_MRI', 'olfaction', 'attention', 'memory', 
     'multitasking', 'word_finding_difficulties', 'fatigue', 
     'gds', 'weimus_p', 'weimus_m', 'weimus_g', 'severity', 
     'disability', 'comorbidities', 'olf_imp_ini', 'olf_imo_late'
@@ -47,12 +47,15 @@ y = df['target'].copy()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 print("\n--- RobustScaler ile Normalizasyon ---")
+from sklearn.preprocessing import RobustScaler
 scaler = RobustScaler()
 X_train_scaled = pd.DataFrame(scaler.fit_transform(X_train), columns=X.columns)
 X_test_scaled = pd.DataFrame(scaler.transform(X_test), columns=X.columns)
 
+from sklearn.ensemble import GradientBoostingClassifier
+
 print("\n--- Optuna Parametreleriyle Feature Selection (LASSO) ---")
-selector_model = LogisticRegression(penalty='l1', solver='liblinear', C=0.20019, random_state=42)
+selector_model = LogisticRegression(penalty='l1', solver='liblinear', C=0.31056, random_state=42)
 selector_model.fit(X_train_scaled, y_train)
 
 selector = SelectFromModel(selector_model, prefit=True)
@@ -62,12 +65,12 @@ X_test_selected = selector.transform(X_test_scaled)
 selected_feature_names = X.columns[selector.get_support()]
 print(f"Secilen KESIN ozellik sayisi: {X_train_selected.shape[1]}")
 
-print("\n--- SMOTE (k_neighbors=8) ile Veri Dengeleniyor ---")
-smote = SMOTE(k_neighbors=8, random_state=42)
+print("\n--- SMOTE (k_neighbors=12) ile Veri Dengeleniyor ---")
+smote = SMOTE(k_neighbors=12, random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train_selected, y_train)
 
-# 3. Final Modeli: Linear SVM
-final_model = SVC(kernel='linear', C=0.33597, random_state=42, probability=True)
+# 3. Final Modeli: Gradient Boosting (God Mode Kazananı)
+final_model = GradientBoostingClassifier(learning_rate=0.0282, n_estimators=85, random_state=42)
 final_model.fit(X_train_smote, y_train_smote)
 
 # 4. Test ve Skor
@@ -78,22 +81,11 @@ print(f"\n[SUCCESS] OPTUNA PIPELINE ACCURACY: %{accuracy*100:.2f}")
 print("\nSiniflandirma Raporu:")
 print(classification_report(y_test, y_pred))
 
-print("\n--- En Onemli 5 Ozellik (SVM Agirliklari) ---")
-importances = pd.Series(np.abs(final_model.coef_[0]), index=selected_feature_names)
+print("\n--- En Onemli 5 Ozellik (Gradient Boosting Agirliklari) ---")
+# Gradient Boosting için feature_importances_ kullanilir
+importances = pd.Series(final_model.feature_importances_, index=selected_feature_names)
 top_features = importances.sort_values(ascending=False).head(5)
 print(top_features.to_string())
-
-def predict_patient(patient_features: dict) -> dict:
-    row = pd.DataFrame([patient_features])[feature_cols]
-    row_scaled = pd.DataFrame(scaler.transform(row), columns=feature_cols)
-    row_selected = selector.transform(row_scaled)
-    pred_class = final_model.predict(row_selected)[0]
-    pred_prob = final_model.predict_proba(row_selected)[0][1] * 100 
-    
-    return {
-        'pcc_olasiligi'   : round(pred_prob, 1),
-        'tahmin_sinifi'   : "PCC (Long COVID)" if pred_class == 1 else "Saglikli/UPC"
-    }
 
 plt.figure(figsize=(10, 6))
 sns.barplot(x=top_features.values, y=top_features.index, palette='flare')

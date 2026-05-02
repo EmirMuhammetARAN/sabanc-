@@ -10,10 +10,8 @@ warnings.filterwarnings('ignore')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 load_dotenv()
-# Gemini API Key (Kullanicidan gelen key veya environment variable)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 genai.configure(api_key=GEMINI_API_KEY)
-# Yeni gemini modeli
 llm_model = genai.GenerativeModel('gemini-flash-latest')
 
 print("=" * 60)
@@ -23,7 +21,6 @@ print("=" * 60)
 WEIGHT_BLOOD = 0.65
 WEIGHT_MRI = 0.35
 
-# 1. Modelleri Yukle
 print("[*] Egitilmis Modeller Yukleniyor...")
 models_dir = os.path.join(BASE_DIR, 'models')
 
@@ -53,13 +50,10 @@ GENE_NAMES = {
 
 def get_real_patient_data():
     """Test setinden rastgele gercek bir hastanin verilerini secer."""
-    # MR Verisi
     df_mri = pd.read_excel(os.path.join(BASE_DIR, 'data', 'mri', 'Dryad_final.xlsx'), sheet_name='Combined')
     mri_patient = df_mri[df_mri['group'] == 'PCC'][mri_features].iloc[1:2]
-    # Eksik verileri doldur ki SVM 0.5 hata vermesin
     mri_patient = mri_patient.fillna(mri_patient.mean().fillna(0))
     
-    # Kan Verisi
     df_blood_X = pd.read_csv(os.path.join(BASE_DIR, 'data', 'blood', 'processed', 'blood_X.csv'))
     df_blood_y = pd.read_csv(os.path.join(BASE_DIR, 'data', 'blood', 'processed', 'blood_y.csv'))
     blood_patient = df_blood_X[df_blood_y['target'] == 1].iloc[1:2]
@@ -71,9 +65,8 @@ def run_mri_model(patient_df):
     X_scaled = mri_scaler.transform(patient_df)
     X_sel = mri_selector.transform(X_scaled)
     dec = mri_model.decision_function(X_sel)[0]
-    prob = 1 / (1 + np.exp(-dec)) # Sigmoid
+    prob = 1 / (1 + np.exp(-dec))
     
-    # Hastaya Ozel Feature Importance
     contributions = X_sel[0] * mri_model.coef_[0]
     selected_names = mri_features[mri_selector.get_support()]
     top_idx = np.argsort(np.abs(contributions))[-3:][::-1]
@@ -86,9 +79,8 @@ def run_blood_model(patient_df):
     X_scaled = blood_scaler.transform(patient_df)
     X_sel = blood_selector.transform(X_scaled)
     dec = blood_model.decision_function(X_sel)[0]
-    prob = 1 / (1 + np.exp(-dec)) # Sigmoid
+    prob = 1 / (1 + np.exp(-dec)) 
     
-    # Hastaya Ozel Feature Importance
     contributions = X_sel[0] * blood_model.coef_[0]
     selected_names = blood_features[blood_selector.get_support()]
     top_idx = np.argsort(np.abs(contributions))[-3:][::-1]
@@ -155,5 +147,4 @@ if __name__ == "__main__":
     print(f" KARAR:      {decision}")
     print(f" Ozet Bozukluklar: {', '.join(top_mri)} | {', '.join([GENE_NAMES.get(g, g) for g in top_blood])}")
     
-    # Gemini'a rapor yazdir
     generate_agentic_report(mri_prob, blood_prob, final_score, decision, top_mri, top_blood)
