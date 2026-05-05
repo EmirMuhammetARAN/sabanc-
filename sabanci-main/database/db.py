@@ -17,12 +17,17 @@ SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", SUPABASE_KEY)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 supabase_admin: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
+import hmac
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# TC Numarası için sistem genelinde sabit pepper (.env'den alır, yoksa hata oluşmaması için default kullanır ama uyarır)
+TC_PEPPER = os.environ.get("TC_PEPPER", "super-secret-tc-pepper-key")
 
 # ── Yardımcı ─────────────────────────────────
 def hash_tc(tc_no: str) -> str:
-    return hashlib.sha256(tc_no.strip().encode()).hexdigest()
+    # Supabase aramalarında eşitlik ile (eq) bulunabilmesi için HMAC-SHA256 kullanıyoruz, random salt kullanamayız
+    return hmac.new(TC_PEPPER.encode(), tc_no.strip().encode(), hashlib.sha256).hexdigest()
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)

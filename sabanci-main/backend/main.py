@@ -51,11 +51,13 @@ from database.db import (
 load_dotenv()
 warnings.filterwarnings('ignore')
 
+import secrets
+
 # ── Sabitler ─────────────────────────────────
 MODELS_DIR    = os.path.join(BASE_DIR, 'models')
 WEIGHT_MRI    = 0.35
 WEIGHT_BLOOD  = 0.65
-JWT_SECRET    = os.environ.get("JWT_SECRET", "neuroveil-super-secret-key-2024")
+JWT_SECRET    = os.environ.get("JWT_SECRET", secrets.token_hex(32)) # Rastgele güvenli key
 JWT_ALGORITHM = "HS256"
 JWT_EXP_HOURS = 24
 
@@ -174,8 +176,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    # During local development allow localhost; in production prefer explicit origins
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
